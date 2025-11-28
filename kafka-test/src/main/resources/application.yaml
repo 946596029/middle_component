@@ -1,0 +1,39 @@
+spring:
+  kafka:
+    bootstrap-servers: 192.168.31.111:30006,192.168.31.112:30006,192.168.31.113:30006
+    client-id: spring-boot-kafka
+    properties:
+      # SASL核心配置
+      sasl:
+        mechanism: PLAIN # 认证机制（固定为PLAIN）
+        jaas:
+          config: org.apache.kafka.common.security.plain.PlainLoginModule required username="kafkauser" password="Osborn@123"; # 账号密码
+      security:
+        protocol: SASL_PLAINTEXT # 认证协议（明文）
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer # key 序列化
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # value JSON 序列化
+      acks: all # 消息确认级别：0=无确认，1=leader确认，all=所有副本确认
+      retries: 3 # 发送失败重试次数
+      batch-size: 16384 # 批量发送大小（字节）
+      linger-ms: 5 # 批量发送延迟（毫秒，攒够批量再发）
+      buffer-memory: 33554432 # 发送缓冲区大小
+      # 生产者事务（可选，需开启时配置）
+      #transaction-id-prefix: kafka-tx-
+    consumer:
+      group-id: test-group # 消费者组ID（必配，不同组可重复消费）
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # key 反序列化
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer # value JSON 反序列化
+      auto-offset-reset: latest # 偏移量重置策略：earliest=从头消费，latest=从最新消费
+      enable-auto-commit: false # 关闭自动提交偏移量（推荐手动提交）
+      max-poll-records: 100 # 单次拉取最大消息数（批量消费用）
+      # JSON 反序列化配置（指定信任的包，避免反序列化安全限制）
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: org.example.message # 自定义实体类包名
+    listener:
+      ack-mode: manual_immediate # 手动提交偏移量（推荐）
+      concurrency: 3 # 消费者并发数（建议≤分区数）
+      type: batch # 批量消费（默认single单条消费）
